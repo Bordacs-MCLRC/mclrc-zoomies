@@ -301,7 +301,8 @@ function boot() {
   window.drawDog = drawDog; window.drawMagpie = drawMagpie;
   Save.load(); if (!COLLARS[Save.data.collar]) Save.data.collar = 'navy'; if (!HATS[Save.data.hat]) Save.data.hat = 'none';
   Game.applySettings(); Input.init(); UI.init(); Game.init();
-  Game.startAttract(); Game.state = 'title'; UI.show('scrTitle'); Sound.music('title');
+  try { Game.startAttract(); } catch (e) { try { console.error(e); } catch (e2) {} }
+  Game.state = 'title'; UI.show('scrTitle'); Sound.music('title');
   // debug / test hooks
   window.__Z = {
     Game, Save, Input, STAGES,

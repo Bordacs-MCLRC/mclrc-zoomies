@@ -24,13 +24,18 @@ const Game = {
     const sx = this.cv.width / this.VW, sy = this.cv.height / this.VH; this.scale = Math.min(sx, sy);
     this.offX = (this.cv.width - this.VW * this.scale) / 2; this.offY = (this.cv.height - this.VH * this.scale) / 2;
     this.layerKey = '';
+    // rebuild the painted backgrounds at the new size once resizing settles
+    // (an embedded frame can start at 0x0 and only get its real size later)
+    clearTimeout(this.relayT);
+    this.relayT = setTimeout(() => { try { if (this.L) this.ensureLayers(this.L.world); } catch (e) {} }, 150);
   },
   ensureLayers(world) {
-    const key = world + '@' + this.scale.toFixed(2);
+    const ls = clamp(this.scale || 1, 0.25, 1.5), ps = clamp(this.scale || 1, 0.25, 2);
+    const key = world + '@' + ls.toFixed(2) + '/' + ps.toFixed(2);
     if (this.layerKey === key) return;
-    this.layers = buildLayers(world, Math.min(this.scale, 1.5)); this.layerKey = key;
-    this.soilPat = soilPattern(this.ctx, WORLDS[world], Math.min(this.scale, 2));
-    try { this.soilPat.setTransform(new DOMMatrix().scale(1 / Math.min(this.scale, 2))); } catch (e) {}
+    this.layers = buildLayers(world, ls); this.layerKey = key;
+    try { this.soilPat = soilPattern(this.ctx, WORLDS[world], ps); } catch (e) { this.soilPat = null; }
+    try { this.soilPat.setTransform(new DOMMatrix().scale(1 / ps)); } catch (e) {}
   },
   // ---------------- stage lifecycle ----------------
   startStage(id, opts) {

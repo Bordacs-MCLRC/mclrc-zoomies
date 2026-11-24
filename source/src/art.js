@@ -642,7 +642,7 @@ const WORLDS = {
   7: { name: 'Lakeside & Newfoundland', sky: ['#78b4dc', '#cfe4ee', '#eef6f8'], grass: '#8a6a44', grass2: '#b8925e', soil: '#6f7378', soil2: '#55595e', soil3: '#8a8e93', water: 'rgba(36,86,128,.72)', waterTop: '#bcdcee', music: 'w3', edge: '#4e3820' }
 };
 const BG_W = 1800, BG_H = 760;
-function makeCanvas(w, h) { const cv = document.createElement('canvas'); cv.width = w; cv.height = h; return cv; }
+function makeCanvas(w, h) { const cv = document.createElement('canvas'); cv.width = Math.max(1, Math.ceil(w) || 1); cv.height = Math.max(1, Math.ceil(h) || 1); return cv; }
 function soilPattern(ctx, W, scale) {
   const S = 96, cv = makeCanvas(S * scale, S * scale), c = cv.getContext('2d'); c.scale(scale, scale);
   c.fillStyle = W.soil; c.fillRect(0, 0, S, S);

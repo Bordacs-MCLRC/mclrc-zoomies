@@ -1590,7 +1590,7 @@ const WORLDS = {
   7: { name: 'Lakeside & Newfoundland', sky: ['#78b4dc', '#cfe4ee', '#eef6f8'], grass: '#8a6a44', grass2: '#b8925e', soil: '#6f7378', soil2: '#55595e', soil3: '#8a8e93', water: 'rgba(36,86,128,.72)', waterTop: '#bcdcee', music: 'w3', edge: '#4e3820' }
 };
 const BG_W = 1800, BG_H = 760;
-function makeCanvas(w, h) { const cv = document.createElement('canvas'); cv.width = w; cv.height = h; return cv; }
+function makeCanvas(w, h) { const cv = document.createElement('canvas'); cv.width = Math.max(1, Math.ceil(w) || 1); cv.height = Math.max(1, Math.ceil(h) || 1); return cv; }
 function soilPattern(ctx, W, scale) {
   const S = 96, cv = makeCanvas(S * scale, S * scale), c = cv.getContext('2d'); c.scale(scale, scale);
   c.fillStyle = W.soil; c.fillRect(0, 0, S, S);
@@ -2530,13 +2530,18 @@ const Game = {
     const sx = this.cv.width / this.VW, sy = this.cv.height / this.VH; this.scale = Math.min(sx, sy);
     this.offX = (this.cv.width - this.VW * this.scale) / 2; this.offY = (this.cv.height - this.VH * this.scale) / 2;
     this.layerKey = '';
+    // rebuild the painted backgrounds at the new size once resizing settles
+    // (an embedded frame can start at 0x0 and only get its real size later)
+    clearTimeout(this.relayT);
+    this.relayT = setTimeout(() => { try { if (this.L) this.ensureLayers(this.L.world); } catch (e) {} }, 150);
   },
   ensureLayers(world) {
-    const key = world + '@' + this.scale.toFixed(2);
+    const ls = clamp(this.scale || 1, 0.25, 1.5), ps = clamp(this.scale || 1, 0.25, 2);
+    const key = world + '@' + ls.toFixed(2) + '/' + ps.toFixed(2);
     if (this.layerKey === key) return;
-    this.layers = buildLayers(world, Math.min(this.scale, 1.5)); this.layerKey = key;
-    this.soilPat = soilPattern(this.ctx, WORLDS[world], Math.min(this.scale, 2));
-    try { this.soilPat.setTransform(new DOMMatrix().scale(1 / Math.min(this.scale, 2))); } catch (e) {}
+    this.layers = buildLayers(world, ls); this.layerKey = key;
+    try { this.soilPat = soilPattern(this.ctx, WORLDS[world], ps); } catch (e) { this.soilPat = null; }
+    try { this.soilPat.setTransform(new DOMMatrix().scale(1 / ps)); } catch (e) {}
   },
   // ---------------- stage lifecycle ----------------
   startStage(id, opts) {
@@ -3802,7 +3807,8 @@ function boot() {
   window.drawDog = drawDog; window.drawMagpie = drawMagpie;
   Save.load(); if (!COLLARS[Save.data.collar]) Save.data.collar = 'navy'; if (!HATS[Save.data.hat]) Save.data.hat = 'none';
   Game.applySettings(); Input.init(); UI.init(); Game.init();
-  Game.startAttract(); Game.state = 'title'; UI.show('scrTitle'); Sound.music('title');
+  try { Game.startAttract(); } catch (e) { try { console.error(e); } catch (e2) {} }
+  Game.state = 'title'; UI.show('scrTitle'); Sound.music('title');
   // debug / test hooks
   window.__Z = {
     Game, Save, Input, STAGES,
